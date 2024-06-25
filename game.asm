@@ -34,6 +34,16 @@ vars:
 
 enemies:
         .render:
+                ; save
+                push r0
+                push r1
+                push r2
+                push r3
+                push r4
+                push r5
+                push r6
+                push r7
+
                 loadn r0, #ENEMIES_COUNT
                 xor r1, r1, r1
                 loadn r2, #vars.enemies.is_dead
@@ -62,10 +72,27 @@ enemies:
                         inc r2
 
                         jmp ..loop
+
                 ..return:
+                        ; restore
+                        pop r7
+                        pop r6
+                        pop r5
+                        pop r4
+                        pop r3
+                        pop r2
+                        pop r1
+                        pop r0
+
                         rts
 
         .init:
+                ; save
+                push r0
+                push r1
+                push r2
+                push r3
+
                 loadn r0, #ENEMIES_START_OFFSET
                 store vars.enemies.offset, r0
 
@@ -85,17 +112,41 @@ enemies:
                         jmp ..loop
 
                 ..return:
+                        ; restore
+                        pop r3
+                        pop r2
+                        pop r1
+                        pop r0
+
                         rts
 
         .update:
+                ; save
+                push r0
+                push r1
+
                 load r0, vars.enemies.offset
                 load r1, vars.enemies.direction
                 add r0, r0, r1
                 store vars.enemies.offset, r0
 
-                call .update_direction
+                ; restore
+                pop r1
+                pop r0
+
+                jmp .update_direction
         
         .update_direction:
+                ; save
+                push r0
+                push r1
+                push r2
+                push r3
+                push r4
+                push r5
+                push r6
+                push r7
+
                 loadn r0, #ENEMIES_COUNT
                 xor r1, r1, r1 ; r1 = 0
                 loadn r2, #vars.enemies.is_dead
@@ -131,9 +182,6 @@ enemies:
 
                         jmp ..loop
 
-                ..return:
-                        rts
-
                 ..move_left:
                         loadn r0, #-1
                         jmp ..change_direction
@@ -146,22 +194,58 @@ enemies:
                         store vars.enemies.direction, r0
                         add r0, r3, r5
                         store vars.enemies.offset, r0
+
+                ..return:
+                        ; restore
+                        pop r7
+                        pop r6
+                        pop r5
+                        pop r4
+                        pop r3
+                        pop r2
+                        pop r1
+                        pop r0
+
                         rts
 
 ray:
         .render:
+                ; save
+                push r0
+                push r1
+
                 loadn r0, #"|"
                 load r1, vars.ray.offset
                 outchar r0, r1
+
+                ; restore
+                pop r1
+                pop r0
+
                 rts
 
         .init:
+                ; save
+                push r0
+
                 loadn r0, #-1
                 store vars.ray.offset, r0
+
+                ; restore
+                pop r0
+
                 rts
 
-        ; FIXME
         .check_collision:
+                push r0
+                push r1
+                push r2
+                push r3
+                push r4
+                push r5
+                push r6
+                push r7
+
                 loadn r0, #ENEMIES_COUNT
                 xor r1, r1, r1 ; r1 = 0
                 loadn r2, #vars.enemies.is_dead
@@ -182,13 +266,20 @@ ray:
                         shiftl0 r7, #1
                         add r6, r6, r7
                         add r6, r6, r3
-                        mod r6, r6, r5 ; r6 = n // 10 * 40 + n % 40 + offset
                         load r7, vars.ray.offset
                         cmp r6, r7
                         jne ..continue
                         loadn r1, #1
                         storei r2, r1
-                        rts
+                        store vars.player.can_shoot, r1
+                        loadn r1, #-1
+                        store vars.ray.offset, r1
+
+                        load r1, vars.player.score
+                        inc r1
+                        store vars.player.score, r1
+
+                        jmp ..return
 
                 ..continue:
                         inc r1
@@ -197,9 +288,23 @@ ray:
                         jmp ..loop
 
                 ..return:
+                        ; restore
+                        pop r7
+                        pop r6
+                        pop r5
+                        pop r4
+                        pop r3
+                        pop r2
+                        pop r1
+                        pop r0
+
                         rts
 
         .update:
+                ; save
+                push r0
+                push r1
+
                 load r0, vars.player.can_shoot
                 dec r0
                 jz ..return
@@ -217,17 +322,33 @@ ray:
                         store vars.ray.offset, r0
 
                 ..return:
+                        ; restore
+                        pop r1
+                        pop r0
+
+                        ; tail-call
                         jmp .check_collision
 
 player:
         .render:
+                ; save
+                push r0
+                push r1
+
                 loadn r0, #"@"
                 load r1, vars.player.offset
                 outchar r0, r1
 
+                ; restore
+                pop r1
+                pop r0
+
                 rts
 
         .init:
+                ; save
+                push r0
+
                 loadn r0, #PLAYER_START_OFFSET
                 store vars.player.offset, r0
 
@@ -238,9 +359,17 @@ player:
                 inc r0
                 store vars.player.can_shoot, r0
 
+                ; restore
+                pop r0
+
                 rts
 
         .update:
+                breakp
+                ; save
+                push r0
+                push r1
+                
                 inchar r0
                 loadn r1, #"D"
                 cmp r0, r1
@@ -254,48 +383,56 @@ player:
                 cmp r0, r1
                 jeq ..shoot
 
-                rts
+                ..return:
+                        ; restore
+                        pop r1
+                        pop r0
+
+                        rts
 
                 ..move_right:
                         load r0, vars.player.offset
                         loadn r1, #29 * 40 + 39
                         cmp r0, r1
-                        jeq ...return
+                        jeq ..return
                         inc r0
 
                         store vars.player.offset, r0
 
-                        ...return:
-                                rts
+                        jmp ..return
 
                 ..move_left:
                         load r0, vars.player.offset
                         loadn r1, #29 * 40
                         cmp r0, r1
-                        jeq ...return
+                        jeq ..return
                         dec r0
 
                         store vars.player.offset, r0
 
-                        ...return:
-                                rts
+                        jmp ..return
 
                 ..shoot:
                         load r0, vars.player.can_shoot ; if player.can_shoot else return
                         dec r0
-                        jnz ...return
+                        jnz ..return
 
                         xor r0, r0, r0
                         store vars.player.can_shoot, r0
                         load r0, vars.player.offset
                         store vars.ray.offset, r0
 
-                        ...return:
-                                rts
-                
-                rts
+                        jmp ..return
 
         .show_score:
+                ; save
+                push r0
+                push r1
+                push r2
+                push r3
+                push r4
+                push r5
+
                 load r0, vars.player.score
                 loadn r1, #10
                 loadn r4, #11
@@ -313,10 +450,25 @@ player:
                         jne ..loop
 
                 ..return:
+                        ; restore
+                        pop r5
+                        pop r4
+                        pop r3
+                        pop r2
+                        pop r1
+                        pop r0
+
                         rts
 
 screen:
         .render:
+                ; save
+                push r0
+                push r1
+                push r2
+                push r3
+                push r4
+
                 xor r1, r1, r1
                 loadn r2, #1200
 
@@ -331,9 +483,20 @@ screen:
                         jmp ..loop
 
                 ..return:
+                        ; restore
+                        pop r4
+                        pop r3
+                        pop r2
+                        pop r1
+                        pop r0
+
                         rts
 
         .main:
+                ; save
+                push r0
+                push r1
+
                 loadn r0, #screens.main
                 call screen.render
                 loadn r1, #0x0D
@@ -346,6 +509,10 @@ screen:
                 loadn r0, #STATE_GAME
                 store vars.state, r0
 
+                ; restore
+                pop r1
+                pop r0
+
                 rts
         
         .game:
@@ -353,26 +520,34 @@ screen:
                 call enemies.init
                 call player.init
 
+                loadn r7, #0
+
                 ..loop:
                         loadn r0, #screens.clear
                         call screen.render
                         call player.show_score
 
-                        call ray.update
-                        call enemies.update
-                        call player.update
+                        loadn r6, #0x1000
+                        cmp r6, r7
+                        ceq ray.update
+
+                        loadn r6, #0x4000
+                        cmp r6, r7
+                        ceq enemies.update
+
+                        loadn r6, #0x1000
+                        cmp r6, r7
+                        ceq player.update
 
                         call ray.render
                         call enemies.render
                         call player.render
 
-                        loadn r0, #10000
-                        ...inner:
-                                dec r0
-                                jnz ...inner
+                        inc r7
 
-                        load r0, vars.player.lost
-                        dec r0
+                        load r1, vars.player.lost
+                        dec r1
+
                         jnz ..loop
                 rts
         
