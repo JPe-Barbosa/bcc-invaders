@@ -1,3 +1,9 @@
+;No jogo temos a pilha onde é armazenado os valores dos registradores
+;ao entrar em uma "função". No fim desta os valores são restaurados com um 
+;pop.
+;
+;		push -> manda para a pilha
+;		pop -> tira da pilha e armazena no registrador
 main:
     .loop:
         ; return address for the call to the vtable method
@@ -15,6 +21,7 @@ main:
     halt
 
 vars:
+	;tabela de funções, usada na main
     .state: #d16 STATE_MAIN
         ..vtable: #d16 screen.main, screen.game, screen.game_over
 
@@ -51,20 +58,42 @@ enemies:
         loadn r4, #10
         loadn r5, #40
 
+		;r0 -> qtd. inimigos
+		;r1 -> contador (0)
+		;r2 - > vetor de se um inimigo esta morto
+		;r3 -> offset dos inimigos
+		;r4 -> qnt. colunas de inimigos
+		;r5 -> qnt colunas da tela.
+
         ..loop:
+			;loop verificando se chegou na qnt. de inimigos
             cmp r1, r0
             jeq ..return
+
             loadi r6, r2
+			;se for zero o inimigo está morto e o código vai para
+			;..continue.
             dec r6
             jz ..continue
 
+			; r6 -> linha 
+			; r7 -> coluna 
+
+			;descobrindo a linha do inimigo
             div r6, r1, r4
+			;descobrindo a posição na tela do inimigo
             mul r6, r6, r5
+			;descobrindo o coluna do inimigo
             mod r7, r1, r4
+			;no jogo os inimigos estão separados de 2 em 2
             shiftl0 r7, #1
+
+			;descobrindo o endereço linear na tela do inimigo.
             add r6, r6, r7
             add r6, r6, r3
+			;carrega o caractere do inimigo 
             loadn r7, #"O"
+			;imprime na tela
             outchar r7, r6
 
         ..continue:
@@ -92,8 +121,10 @@ enemies:
         push r1
         push r2
         push r3
-
+		
+		;carrega a posição inicial
         loadn r0, #ENEMIES_START_OFFSET
+		
         store vars.enemies.offset, r0
 
         loadn r0, #ENEMIES_COUNT
@@ -154,6 +185,14 @@ enemies:
         loadn r4, #10
         loadn r5, #40
 
+		;r0 -> qtd. inimigos
+		;r1 -> contador (0)
+		;r2 - > vetor de se um inimigo esta morto
+		;r3 -> offset dos inimigos
+		;r4 -> qnt. colunas de inimigos
+		;r5 -> qnt colunas da tela.
+
+
         ..loop:
             cmp r1, r0
             jeq ..return
@@ -161,13 +200,22 @@ enemies:
             dec r6
             jz ..continue
 
+
+
+           	;descobrindo a linha do inimigo
             div r6, r1, r4
+			;descobrindo a posição na tela do inimigo
             mul r6, r6, r5
+			;descobrindo o coluna do inimigo
             mod r7, r1, r4
+			;no jogo os inimigos estão separados de 2 em 2
             shiftl0 r7, #1
+
+			;descobrindo o endereço linear na tela do inimigo.
             add r6, r6, r7
             add r6, r6, r3
 
+			;parte responsavel por checar se os fantasmas chegaram ao fim
             loadn r7, #1160
             cmp r6, r7
             jeg ..game_over
@@ -529,7 +577,7 @@ screen:
         pop r0
 
         rts
-    
+    ; entra nesta função ao mudar de tela e inicializa tudo 
     .game:
         call ray.init
         call enemies.init
